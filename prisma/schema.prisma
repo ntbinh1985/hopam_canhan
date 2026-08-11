@@ -10,8 +10,9 @@ model Song {
   id        Int      @id @default(autoincrement())
   title     String
   artist    String?
-  key       String   // Tone gốc (vd: "C", "Am")
-  rhythm    String?  // Điệu (vd: "Ballad")
-  content   String   // Lời bài hát chứa hợp âm dạng [C], [G]...
+  key       String   // Tone gốc
+  rhythm    String?  // Điệu
+  genre     String?  // Thể loại nhạc (TRƯỜNG MỚI)
+  content   String   // Lời và hợp âm
   createdAt DateTime @default(now())
 }
