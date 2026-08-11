@@ -1,0 +1,23 @@
+services:
+  hopam:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: hopam-web
+    restart: always
+    environment:
+      - WATCHPACK_POLLING=true
+    volumes:
+      # 1. Soi toàn bộ code từ Mac vào trong Container (Hot-Reload)
+      - .:/app
+      # 2. Giữ node_modules độc lập không xung đột
+      - /app/node_modules
+      # 3. VOLUME DỮ LIỆU: Giữ an toàn tuyệt đối cho file SQLite hopam.db
+      - ./data:/app/data
+    labels:
+      # PHÉP THUẬT CỦA ORBSTACK: Tự động trỏ tên miền nội bộ!
+      - "dev.orbstack.domains=hopam.local"
+    ports:
+      # [Port máy Mac : Port trong Container]
+      # Đổi sang 3001 trên Mac để KHÔNG đụng Flowise đang chạy port 3000
+      - "3001:3000"

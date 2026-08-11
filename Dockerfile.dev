@@ -1,0 +1,14 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Cài đặt Python và trình biên dịch C++ cho SQLite trên Apple Silicon
+RUN apk add --no-cache python3 make g++
+
+COPY package*.json ./
+RUN npm install
+
+EXPOSE 3000
+
+# TỰ ĐỘNG ĐỒNG BỘ PRISMA DATABASE MỖI KHI KHỞI ĐỘNG CONTAINER
+CMD ["sh", "-c", "npx prisma generate && npx prisma db push && npm run dev"]
