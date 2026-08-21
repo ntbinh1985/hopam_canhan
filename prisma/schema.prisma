@@ -7,12 +7,14 @@ generator client {
 }
 
 model Song {
-  id        Int      @id @default(autoincrement())
-  title     String
-  artist    String?
-  key       String   // Tone gốc
-  rhythm    String?  // Điệu
-  genre     String?  // Thể loại nhạc (TRƯỜNG MỚI)
-  content   String   // Lời và hợp âm
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  title      String
+  artist     String?
+  key        String   
+  rhythm     String?  
+  genre      String?  
+  notes      String?  // Bảng ghi chú, Solo Tab
+  isFavorite Boolean  @default(false) // Đánh dấu sao yêu thích
+  content    String   
+  createdAt  DateTime @default(now())
 }

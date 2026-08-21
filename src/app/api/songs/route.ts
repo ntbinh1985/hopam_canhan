@@ -22,7 +22,9 @@ export async function POST(request: Request) {
         artist: body.artist || 'Ẩn danh',
         key: body.key || 'C',
         rhythm: body.rhythm || 'Ballad',
-        genre: body.genre || 'Khác', // Nhận thêm Thể Loại
+        genre: body.genre || 'Khác',
+        notes: body.notes || '',
+        isFavorite: body.isFavorite || false,
         content: body.content,
       },
     });
@@ -44,7 +46,9 @@ export async function PUT(request: Request) {
         artist: body.artist || 'Ẩn danh',
         key: body.key || 'C',
         rhythm: body.rhythm || 'Ballad',
-        genre: body.genre || 'Khác', // Nhận thêm Thể Loại
+        genre: body.genre || 'Khác',
+        notes: body.notes || '',
+        isFavorite: body.isFavorite ?? false,
         content: body.content,
       },
     });
