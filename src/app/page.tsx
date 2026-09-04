@@ -50,9 +50,9 @@ export default function Home() {
   const [step, setStep] = useState(0);
   const [fontSize, setFontSize] = useState(16);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState(1);
+  const [scrollDelay, setScrollDelay] = useState(40); // Thời gian delay (ms) giữa các nhịp cuộn. Số càng lớn cuộn càng chậm, số càng nhỏ cuộn càng nhanh.
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isTwoColumns, setIsTwoColumns] = useState(false); // true: 2 cột, false: 1 cột (tự co giãn hoặc cuộn)
+  const [isTwoColumns, setIsTwoColumns] = useState(false); 
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showSongListModal, setShowSongListModal] = useState(false);
@@ -85,7 +85,6 @@ export default function Home() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Tự động tắt cuộn, thoát Fullscreen khi chuyển view
   useEffect(() => {
     if (showForm || showSongListModal || showToneModal || !selectedSong) {
       setIsScrolling(false);
@@ -94,7 +93,6 @@ export default function Home() {
     setActiveVideoIdx(0); 
   }, [selectedSong, showForm, showSongListModal, showToneModal]);
 
-  // TỰ ĐỘNG TẢI TÊN VIDEO YOUTUBE BẰNG NOEMBED API
   useEffect(() => {
     if (selectedSong?.youtubeLinks) {
       const links = selectedSong.youtubeLinks.split('\n').filter(l => l.trim() !== '');
@@ -112,7 +110,6 @@ export default function Home() {
     }
   }, [selectedSong]);
 
-  // METRONOME LOGIC
   const playClick = () => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -149,23 +146,21 @@ export default function Home() {
     };
   }, [isMetronomePlaying, bpm]);
 
-  // AUTO-SCROLL LOGIC
+  // AUTO-SCROLL LOGIC (Sử dụng scrollDelay: Tăng giảm thời gian trễ)
   useEffect(() => {
     let scrollInterval: NodeJS.Timeout;
     if (isScrolling) {
-      const speedDelay = 40 / scrollSpeed; 
       scrollInterval = setInterval(() => {
         if (isFullscreen && fullScreenRef.current) {
           fullScreenRef.current.scrollBy(0, 1);
         } else {
           window.scrollBy(0, 1);
         }
-      }, speedDelay);
+      }, scrollDelay);
     }
     return () => clearInterval(scrollInterval);
-  }, [isScrolling, scrollSpeed, isFullscreen]);
+  }, [isScrolling, scrollDelay, isFullscreen]);
 
-  // DATABASE FETCHING
   const fetchSongs = async () => {
     try {
       const res = await fetch('/api/songs');
@@ -267,7 +262,6 @@ export default function Home() {
   const favoriteSongs = songs.filter(s => s.isFavorite);
   const currentDisplayKey = selectedSong ? getTargetKey(selectedSong.key, step) : '';
 
-  // RENDER LỜI BÀI HÁT
   const renderLyrics = (fitSinglePage = false) => {
     if (!selectedSong) return null;
     const lines = selectedSong.content.split('\n');
@@ -492,7 +486,7 @@ export default function Home() {
 
         ) : (
           
-          /* CHI TIẾT BÀI HÁT (Giao diện thông thường) */
+          /* CHI TIẾT BÀI HÁT (Màn hình thông thường) */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeIn">
             
             <div className="lg:col-span-8 space-y-4">
@@ -523,7 +517,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TOOLBAR */}
+              {/* TOOLBAR (Màn hình thông thường: Bổ sung 2 nút Tăng/Giảm tốc độ cuộn khi đang bật cuộn) */}
               <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-wrap items-center gap-3">
                 <div className="flex items-center bg-slate-50 p-1 rounded-lg border border-slate-200">
                   <button onClick={() => setStep(s => s - 1)} className="w-8 h-8 rounded-md bg-white border border-slate-200 font-extrabold text-slate-600 hover:bg-slate-100">-</button>
@@ -540,13 +534,13 @@ export default function Home() {
 
                 <div className="flex items-center bg-slate-50 p-1 rounded-lg border border-slate-200">
                   <button onClick={() => setIsScrolling(!isScrolling)} className={`px-3 h-8 rounded-md border shadow-sm font-bold text-xs flex items-center gap-1.5 ${isScrolling ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-slate-700 border-slate-200'}`}>
-                    {isScrolling ? '⏸ Dừng' : '▶ Cuộn'}
+                    {isScrolling ? '⏸ Dừng cuộn' : '▶ Cuộn'}
                   </button>
                   {isScrolling && (
-                    <div className="flex items-center gap-1 ml-1.5">
-                      {[0.3 ,0.5, 1, 2, 3].map(speed => (
-                        <button key={speed} onClick={() => setScrollSpeed(speed)} className={`w-6 h-8 text-xs font-bold rounded-md ${scrollSpeed === speed ? 'bg-teal-600 text-white' : 'text-slate-500'}`}>{speed}x</button>
-                      ))}
+                    <div className="flex items-center gap-1 ml-1.5 bg-white border border-slate-200 rounded-md px-1 py-0.5">
+                      <span className="text-[10px] text-slate-400 font-bold px-1">Tốc độ:</span>
+                      <button onClick={() => setScrollDelay(d => Math.min(120, d + 10))} className="w-6 h-7 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded text-xs" title="Chậm hơn">-</button>
+                      <button onClick={() => setScrollDelay(d => Math.max(5, d - 5))} className="w-6 h-7 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded text-xs" title="Nhanh hơn">+</button>
                     </div>
                   )}
                 </div>
@@ -686,18 +680,12 @@ export default function Home() {
                     {isScrolling ? '⏸ Dừng cuộn' : '▶ Cuộn'}
                   </button>
                   
-                  {/* Hiển thị nút tăng giảm tốc độ cuộn khi đang bật cuộn */}
+                  {/* Hiển thị nút tăng/giảm thời gian cuộn khi đang bật cuộn */}
                   {isScrolling && (
-                    <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-full px-1">
-                      {[0.3, 0.5, 1, 2, 3].map(speed => (
-                        <button 
-                          key={speed} 
-                          onClick={() => setScrollSpeed(speed)} 
-                          className={`px-1.5 h-5 text-[10px] font-bold rounded-full transition ${scrollSpeed === speed ? 'bg-teal-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-                        >
-                          {speed}x
-                        </button>
-                      ))}
+                    <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-full px-1.5 py-0.5">
+                      <span className="text-[10px] text-slate-400 font-bold px-0.5">Tốc độ:</span>
+                      <button onClick={() => setScrollDelay(d => Math.min(120, d + 10))} className="w-5 h-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-full text-[10px]" title="Chậm hơn">-</button>
+                      <button onClick={() => setScrollDelay(d => Math.max(5, d - 5))} className="w-5 h-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-full text-[10px]" title="Nhanh hơn">+</button>
                     </div>
                   )}
                 </div>
@@ -706,7 +694,7 @@ export default function Home() {
                 <button 
                   onClick={() => {
                     setIsTwoColumns(!isTwoColumns);
-                    if (!isTwoColumns) setIsScrolling(false); // Tắt cuộn nếu chuyển sang xem 1 trang
+                    if (!isTwoColumns) setIsScrolling(false);
                   }} 
                   className="px-3 h-6 rounded-full border bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition"
                 >
@@ -729,7 +717,7 @@ export default function Home() {
                   {renderLyrics(false)}
                 </div>
               ) : isScrolling ? (
-                /* Chế độ đang cuộn: Đưa về 1 cột dọc thông thường để cuộn mượt */
+                /* Chế độ đang cuộn: Đưa về 1 cột dọc */
                 <div className="text-left max-w-4xl mx-auto w-full">
                   {renderLyrics(false)}
                 </div>
