@@ -544,7 +544,7 @@ export default function Home() {
                   </button>
                   {isScrolling && (
                     <div className="flex items-center gap-1 ml-1.5">
-                      {[0.5, 1, 2, 3].map(speed => (
+                      {[0.3 ,0.5, 1, 2, 3].map(speed => (
                         <button key={speed} onClick={() => setScrollSpeed(speed)} className={`w-6 h-8 text-xs font-bold rounded-md ${scrollSpeed === speed ? 'bg-teal-600 text-white' : 'text-slate-500'}`}>{speed}x</button>
                       ))}
                     </div>
@@ -689,7 +689,7 @@ export default function Home() {
                   {/* Hiển thị nút tăng giảm tốc độ cuộn khi đang bật cuộn */}
                   {isScrolling && (
                     <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-full px-1">
-                      {[0.5, 1, 2, 3].map(speed => (
+                      {[0.3, 0.5, 1, 2, 3].map(speed => (
                         <button 
                           key={speed} 
                           onClick={() => setScrollSpeed(speed)} 
