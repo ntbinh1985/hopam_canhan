@@ -41,3 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+node-v24.20.0-win-x64/node.exe
+node-v24.20.0-win-x64.zip

@@ -52,7 +52,7 @@ export default function Home() {
   const [isScrolling, setIsScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isTwoColumns, setIsTwoColumns] = useState(false); // Chế độ 1 cột hay 2 cột
+  const [isTwoColumns, setIsTwoColumns] = useState(false); // true: 2 cột, false: 1 cột (tự co giãn hoặc cuộn)
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showSongListModal, setShowSongListModal] = useState(false);
@@ -149,7 +149,7 @@ export default function Home() {
     };
   }, [isMetronomePlaying, bpm]);
 
-  // AUTO-SCROLL LOGIC (Hỗ trợ cả chế độ thường và Fullscreen)
+  // AUTO-SCROLL LOGIC
   useEffect(() => {
     let scrollInterval: NodeJS.Timeout;
     if (isScrolling) {
@@ -267,15 +267,21 @@ export default function Home() {
   const favoriteSongs = songs.filter(s => s.isFavorite);
   const currentDisplayKey = selectedSong ? getTargetKey(selectedSong.key, step) : '';
 
-  // COMPONENT HIỂN THỊ LỜI BÀI HÁT (Dùng chung cho cả 2 màn hình)
-  const renderLyrics = () => {
+  // RENDER LỜI BÀI HÁT
+  const renderLyrics = (fitSinglePage = false) => {
     if (!selectedSong) return null;
-    return selectedSong.content.split('\n').map((line: string, lineIdx: number) => {
-      if (!line.trim()) return <div key={lineIdx} className="h-2" />;
+    const lines = selectedSong.content.split('\n');
+    
+    return lines.map((line: string, lineIdx: number) => {
+      if (!line.trim()) return <div key={lineIdx} className={fitSinglePage ? "h-1" : "h-2"} />;
 
       const parsed: { chord?: string; text: string }[] = parseLyricLine(line);
       return (
-        <div key={lineIdx} className="text-slate-800 font-normal transition-all duration-200 mb-1 break-inside-avoid" style={{ fontSize: `${fontSize}px`, lineHeight: 1.5 }}>
+        <div 
+          key={lineIdx} 
+          className={`text-slate-800 font-normal transition-all duration-200 break-inside-avoid ${fitSinglePage ? 'my-0.5' : 'mb-1'}`} 
+          style={{ fontSize: `${fontSize}px`, lineHeight: fitSinglePage ? 1.25 : 1.5 }}
+        >
           {parsed.map((item: { chord?: string; text: string }, idx: number) => {
             const displayChord = item.chord ? transposeChord(item.chord, step, currentDisplayKey) : null;
             return (
@@ -486,10 +492,9 @@ export default function Home() {
 
         ) : (
           
-          /* CHI TIẾT BÀI HÁT (2 Cột cố định) */
+          /* CHI TIẾT BÀI HÁT (Giao diện thông thường) */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeIn">
             
-            {/* CỘT TRÁI (8/12): Lời bài hát & Toolbar */}
             <div className="lg:col-span-8 space-y-4">
               
               <div className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-2xl p-6 md:p-8 shadow-md relative">
@@ -553,14 +558,13 @@ export default function Home() {
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-10">
-                {renderLyrics()}
+                {renderLyrics(false)}
               </div>
             </div>
 
-            {/* CỘT PHẢI (4/12): CỐ ĐỊNH KHI CUỘN */}
+            {/* CỘT PHẢI (4/12) */}
             <div className="lg:col-span-4 self-start sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-6 pb-6 pr-2">
               
-              {/* 1. GHI CHÚ / SOLO TAB */}
               <div className="bg-[#FFFDF5] rounded-2xl border border-amber-200 p-5 shadow-sm">
                 <h3 className="font-extrabold text-amber-700 text-sm mb-3 flex items-center gap-2 border-b border-amber-200/50 pb-2">
                   <span>📝</span> GHI CHÚ / SOLO TAB
@@ -577,7 +581,6 @@ export default function Home() {
                 )}
               </div>
 
-              {/* 2. YOUTUBE PLAYLIST */}
               {youtubeVideos.length > 0 && (
                 <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                   <h3 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
@@ -613,7 +616,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 3. METRONOME */}
               <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5 shadow-lg text-white">
                 <div className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
                   <h3 className="font-bold text-slate-200 text-sm flex items-center gap-2"><span className="text-teal-400">⏱️</span> METRONOME</h3>
@@ -640,55 +642,109 @@ export default function Home() {
           </div>
         )}
 
-        {/* OVERLAY: FULLSCREEN CHIA 2 CỘT */}
+        {/* OVERLAY: FULLSCREEN */}
         {isFullscreen && selectedSong && (
-          <div ref={fullScreenRef} className="fixed inset-0 bg-white z-[100] overflow-y-auto pb-20 animate-fadeIn">
-            <div className="max-w-6xl mx-auto px-6 py-10">
+          <div ref={fullScreenRef} className="fixed inset-0 bg-white z-[100] overflow-y-auto flex flex-col animate-fadeIn">
+            
+            {/* THANH TOOLBAR TOÀN MÀN HÌNH */}
+            <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-2 shadow-sm flex flex-wrap items-center justify-between gap-2">
               
-              <div className="text-center mb-10">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{selectedSong.title}</h1>
-                <p className="text-slate-500 mt-3 font-semibold text-sm">
-                  {selectedSong.artist || "Ẩn danh"} • {selectedSong.rhythm || "Ballad"} • {selectedSong.genre || "Khác"}
-                </p>
+              <div className="flex items-center gap-3 min-w-0">
+                <h1 className="text-base font-extrabold text-slate-900 truncate">{selectedSong.title}</h1>
+                <span className="text-xs text-slate-400 hidden md:inline">({selectedSong.artist || "Ẩn danh"})</span>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 mb-10 bg-slate-50 py-3 px-6 rounded-full border border-slate-200 sticky top-4 z-50 shadow-sm w-max mx-auto">
-                <div className="flex items-center gap-1 border-r border-slate-200 pr-3">
-                  <span className="text-xs font-bold text-slate-400 uppercase mr-1">Tone</span>
-                  <button onClick={() => setStep(s => s - 1)} className="w-8 h-8 bg-white border border-slate-200 rounded font-bold text-slate-600 hover:bg-slate-100">-</button>
-                  <button onClick={() => setShowToneModal(true)} className="px-3 h-8 bg-teal-600 text-white font-bold text-xs rounded shadow-sm">[{currentDisplayKey}] ▼</button>
-                  <button onClick={() => setStep(s => s + 1)} className="w-8 h-8 bg-white border border-slate-200 rounded font-bold text-slate-600 hover:bg-slate-100">+</button>
+              {/* Toolbar giữa */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-full border border-slate-200">
+                {/* Tone */}
+                <div className="flex items-center gap-0.5 px-2 border-r border-slate-300">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase mr-1">Tone</span>
+                  <button onClick={() => setStep(s => s - 1)} className="w-6 h-6 bg-white border border-slate-200 rounded-full font-bold text-slate-600 hover:bg-slate-50 text-xs">-</button>
+                  <button onClick={() => setShowToneModal(true)} className="px-2 h-6 bg-teal-600 text-white font-bold text-xs rounded-full shadow-sm">[{currentDisplayKey}] ▼</button>
+                  <button onClick={() => setStep(s => s + 1)} className="w-6 h-6 bg-white border border-slate-200 rounded-full font-bold text-slate-600 hover:bg-slate-50 text-xs">+</button>
                 </div>
 
-                <div className="flex items-center gap-1 border-r border-slate-200 pr-3">
-                  <span className="text-xs font-bold text-slate-400 uppercase mr-1">Size</span>
-                  <button onClick={() => setFontSize(f => Math.max(12, f - 2))} className="w-8 h-8 bg-white border border-slate-200 rounded font-bold text-slate-600 hover:bg-slate-100">A-</button>
-                  <button onClick={() => setFontSize(f => Math.min(36, f + 2))} className="w-8 h-8 bg-white border border-slate-200 rounded font-bold text-slate-600 hover:bg-slate-100">A+</button>
+                {/* Size */}
+                <div className="flex items-center gap-0.5 px-2 border-r border-slate-300">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase mr-1">Size</span>
+                  <button onClick={() => setFontSize(f => Math.max(10, f - 2))} className="w-6 h-6 bg-white border border-slate-200 rounded-full font-bold text-slate-600 hover:bg-slate-50 text-xs">A-</button>
+                  <button onClick={() => setFontSize(f => Math.min(36, f + 2))} className="w-6 h-6 bg-white border border-slate-200 rounded-full font-bold text-slate-600 hover:bg-slate-50 text-xs">A+</button>
                 </div>
 
-                <button onClick={() => setIsScrolling(!isScrolling)} className={`px-4 h-8 rounded border font-bold text-xs transition ${isScrolling ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'}`}>
-                  {isScrolling ? '⏸ Dừng cuộn' : '▶ Cuộn trang'}
-                </button>
+                {/* Nút Cuộn: Bấm vào sẽ tự động về 1 cột và bật cuộn trang */}
+                <div className="flex items-center gap-1 px-2 border-r border-slate-300">
+                  <button 
+                    onClick={() => {
+                      const nextScrolling = !isScrolling;
+                      setIsScrolling(nextScrolling);
+                      if (nextScrolling) {
+                        setIsTwoColumns(false); // Chuyển về 1 cột khi bắt đầu cuộn
+                      }
+                    }} 
+                    className={`px-3 h-6 rounded-full border font-bold text-xs transition ${isScrolling ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                  >
+                    {isScrolling ? '⏸ Dừng cuộn' : '▶ Cuộn'}
+                  </button>
+                  
+                  {/* Hiển thị nút tăng giảm tốc độ cuộn khi đang bật cuộn */}
+                  {isScrolling && (
+                    <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-full px-1">
+                      {[0.5, 1, 2, 3].map(speed => (
+                        <button 
+                          key={speed} 
+                          onClick={() => setScrollSpeed(speed)} 
+                          className={`px-1.5 h-5 text-[10px] font-bold rounded-full transition ${scrollSpeed === speed ? 'bg-teal-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                        >
+                          {speed}x
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                <button onClick={() => setIsTwoColumns(!isTwoColumns)} className="px-4 h-8 rounded border bg-white text-slate-700 font-bold text-xs hover:bg-slate-100 transition">
+                {/* Chế độ 1 Trang / 2 Cột */}
+                <button 
+                  onClick={() => {
+                    setIsTwoColumns(!isTwoColumns);
+                    if (!isTwoColumns) setIsScrolling(false); // Tắt cuộn nếu chuyển sang xem 1 trang
+                  }} 
+                  className="px-3 h-6 rounded-full border bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition"
+                >
                   {isTwoColumns ? '📄 1 Trang' : '📖 2 Cột'}
                 </button>
-
-                <button onClick={() => { setIsFullscreen(false); setIsScrolling(false); }} className="ml-2 px-4 h-8 rounded border border-slate-300 bg-slate-800 text-white font-bold text-xs hover:bg-slate-900 transition shadow-md">
-                  ✖ Thoát
-                </button>
               </div>
 
-              {/* Lời bài hát Fullscreen */}
-              <div className={`text-left max-w-5xl mx-auto ${isTwoColumns ? 'md:columns-2 gap-16' : ''}`}>
-                {renderLyrics()}
-              </div>
+              {/* Nút thoát */}
+              <button onClick={() => { setIsFullscreen(false); setIsScrolling(false); }} className="px-3.5 h-7 rounded-full bg-slate-800 text-white font-bold text-xs hover:bg-slate-900 transition shadow-sm">
+                ✕ Thoát
+              </button>
+            </div>
+
+            {/* PHẦN NỘI DUNG CHÍNH */}
+            <div className="flex-1 w-full max-w-[96%] mx-auto px-2 md:px-6 py-6 flex flex-col">
+              
+              {isTwoColumns ? (
+                /* Chế độ 2 cột */
+                <div className="text-left md:columns-2 lg:columns-3 gap-12">
+                  {renderLyrics(false)}
+                </div>
+              ) : isScrolling ? (
+                /* Chế độ đang cuộn: Đưa về 1 cột dọc thông thường để cuộn mượt */
+                <div className="text-left max-w-4xl mx-auto w-full">
+                  {renderLyrics(false)}
+                </div>
+              ) : (
+                /* Chế độ 1 Trang (Fit to screen) */
+                <div className="flex-1 flex flex-col justify-around text-left max-w-6xl mx-auto w-full my-auto">
+                  {renderLyrics(true)}
+                </div>
+              )}
 
             </div>
           </div>
         )}
 
-        {/* MODAL KHO BÀI V VÀ TONE... */}
+        {/* MODAL KHO BÀI VÀ TONE */}
         {showSongListModal && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
